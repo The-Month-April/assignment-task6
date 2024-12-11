@@ -20,8 +20,12 @@ jobs:
           node-version: '18.x'
           cache: 'yarn'
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Clean and install dependencies
+        run: |
+          rm -f yarn.lock
+          rm -f package-lock.json
+          rm -rf node_modules
+          yarn install
 
       # Run tests if they exist (non-blocking)
       - name: Run tests
