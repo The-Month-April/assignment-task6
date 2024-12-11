@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build and Test Release
+    name: Build Release
     runs-on: ubuntu-latest
     
     steps:
@@ -27,62 +27,36 @@ jobs:
           rm -rf node_modules
           yarn install
 
-      # Import fix for React Native components
-      - name: Fix React Native imports
-        run: |
-          echo "Updating React Native component imports..."
-          if [ -f "babel.config.js" ]; then
-            echo "module.exports = {" > babel.config.js
-            echo "  presets: ['module:metro-react-native-babel-preset']," >> babel.config.js
-            echo "  plugins: ['react-native-reanimated/plugin']" >> babel.config.js
-            echo "};" >> babel.config.js
-          fi
-
-      # Run Metro bundler clean
-      - name: Clean Metro bundler cache
-        run: |
-          yarn react-native start --reset-cache &
-          sleep 10
-          pkill -f "react-native start"
-
-      # Setup Java for Android build
-      - name: Set up JDK
+      # Set up Java 8
+      - name: Set up JDK 8
         uses: actions/setup-java@v3
         with:
           java-version: '8'
           distribution: 'adopt'
 
-      # Install Android SDK and build tools
-      - name: Setup Android SDK
+      # Install Android SDK
+      - name: Set up Android SDK
         uses: android-actions/setup-android@v2
-        with:
-          cmdline-tools-version: '8512546'
-          build-tools-version: '30.0.3'
 
-      # Update Android build files
-      - name: Update Android Gradle config
+      # Install specific Android tools
+      - name: Install Android Build Tools
         run: |
-          cd android
-          if [ -f "build.gradle" ]; then
-            sed -i 's/com.android.tools.build:gradle:7.0.4/com.android.tools.build:gradle:7.4.2/g' build.gradle || true
-          fi
-
-      # Generate Android Release
+          sdkmanager --install "build-tools;30.0.3"
+          sdkmanager --install "platforms;android-30"
+          sdkmanager --install "platform-tools"
+          
       - name: Build Android Release
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew clean
           ./gradlew assembleRelease
 
-      # Upload build artifacts
       - name: Upload Android Build
         uses: actions/upload-artifact@v3
         with:
           name: android-release
           path: android/app/build/outputs/apk/release/
 
-      # Update release with builds and notes
       - name: Update Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -92,13 +66,10 @@ jobs:
           body: |
             ## Release Notes
             This release includes:
-            - Bug fixes for React Native component imports
-            - Updated Gradle configuration
-            - Optimized build process
+            - Initial test build
+            - Basic app functionality
             
             ### Binary Files
             - Android APK: Available in the assets section below
-            
-            Please download the appropriate binary for your platform.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
