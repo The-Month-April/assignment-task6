@@ -42,14 +42,27 @@ jobs:
         with:
           files: build/app-release.tar.gz
           body: |
-            ## Release Notes
-            This release includes:
-            - Source code package
-            - Project configuration
+            # Volunteam App v1.0.0 Release
+
+            ## 🎉 Features
+            - Map integration with Google Maps API
+            - Real-time event location tracking
+            - User authentication system
+            - Event creation and management
             
-            ### Package Contents
-            - Full source code
-            - Package dependencies
-            - Configuration files
+            ## 🔧 Technical Details
+            - TypeScript/React Native implementation
+            - Secure authentication context
+            - Optimized map rendering
+            - Responsive UI components
+
+            ## 📦 Release Artifacts
+            - `app-release.tar.gz`: Contains the complete application bundle
+            - Source code archives: Available for development reference
+            
+            ## 📝 Deployment Notes
+            - Built using GitHub Actions automated workflow
+            - Includes all necessary configuration files
+            - Ready for development environment setup
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
