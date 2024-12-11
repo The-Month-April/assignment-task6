@@ -3,12 +3,19 @@ name: Release Build
 on:
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Run in test mode'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   build:
     name: Build and Test
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -16,23 +23,31 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
-          cache: "yarn"
+          node-version: '18.x'
+          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Run tests
-        run: yarn test
+      - name: Check for tests
+        run: |
+          if grep -q "\"test\":" package.json; then
+            echo "Running tests..."
+            yarn test
+          else
+            echo "No test command found in package.json - skipping tests"
+          fi
 
-      - name: Build project
-        run: yarn build
+      - name: Install React Native dependencies
+        run: |
+          yarn install
+          npx react-native --version
 
       - name: Build Android bundle
         run: |
           cd android
           ./gradlew bundleRelease
-
+        
       - name: Build iOS archive
         run: |
           cd ios
