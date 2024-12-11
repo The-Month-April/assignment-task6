@@ -20,12 +20,17 @@ jobs:
           node-version: '18.x'
           cache: 'yarn'
 
-      - name: Clean and install dependencies
+      - name: Install React Native CLI
         run: |
-          rm -f yarn.lock
-          rm -f package-lock.json
-          rm -rf node_modules
-          yarn install
+          yarn global add @react-native-community/cli
+          yarn global add react-native-cli
+
+      - name: Setup React Native and Android directory
+        run: |
+          npx react-native init volunteam --template react-native-template-typescript
+          cp -r volunteam/android ./
+          cp -r volunteam/ios ./
+          rm -rf volunteam
 
       # Set up Java
       - uses: actions/setup-java@v3
