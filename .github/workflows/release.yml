@@ -49,12 +49,15 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
-          distribution: 'temurin'
+          java-version: '8'
+          distribution: 'adopt'
 
       # Install Android SDK and build tools
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
+        with:
+          cmdline-tools-version: '8512546'
+          build-tools-version: '30.0.3'
 
       # Update Android build files
       - name: Update Android Gradle config
