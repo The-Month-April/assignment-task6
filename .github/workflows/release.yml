@@ -27,23 +27,28 @@ jobs:
           rm -rf node_modules
           yarn install
 
-      # Set up Java 8
-      - name: Set up JDK 8
-        uses: actions/setup-java@v3
+      # Set up Java and Android SDK
+      - uses: actions/setup-java@v3
         with:
-          java-version: '8'
-          distribution: 'adopt'
+          distribution: 'zulu'
+          java-version: '11'
 
-      # Install Android SDK
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v2
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
 
-      # Install specific Android tools
-      - name: Install Android Build Tools
-        run: |
-          sdkmanager --install "build-tools;30.0.3"
-          sdkmanager --install "platforms;android-30"
-          sdkmanager --install "platform-tools"
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-caches-${{ hashFiles('gradle/**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-caches-
           
       - name: Build Android Release
         run: |
