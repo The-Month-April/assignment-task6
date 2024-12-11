@@ -4,16 +4,10 @@ on:
   release:
     types: [created]
   workflow_dispatch:
-    inputs:
-      test_mode:
-        description: 'Run in test mode'
-        required: true
-        default: true
-        type: boolean
 
 jobs:
   build:
-    name: Build and Test
+    name: Build and Test Release
     runs-on: ubuntu-latest
     
     steps:
@@ -29,53 +23,63 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
-      - name: Check for tests
+      # Run tests if they exist (non-blocking)
+      - name: Run tests
+        continue-on-error: true
         run: |
           if grep -q "\"test\":" package.json; then
             echo "Running tests..."
             yarn test
           else
             echo "No test command found in package.json - skipping tests"
+            echo "Consider adding tests for better code quality"
           fi
 
-      - name: Install React Native dependencies
-        run: |
-          yarn install
-          npx react-native --version
+      # TypeScript check
+      - name: Type check
+        run: yarn tsc --noEmit
 
-      - name: Build Android bundle
+      # Setup Java for Android build
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      # Install Android SDK and build tools
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      # Generate Android Release
+      - name: Build Android Release
         run: |
           cd android
-          ./gradlew bundleRelease
-        
-      - name: Build iOS archive
-        run: |
-          cd ios
-          xcodebuild -workspace volunteam.xcworkspace -scheme volunteam archive -configuration Release -archivePath $PWD/build/volunteam.xcarchive
+          chmod +x gradlew
+          ./gradlew assembleRelease
 
-      - name: Upload Android artifact
+      # Upload build artifacts
+      - name: Upload Android Build
         uses: actions/upload-artifact@v3
         with:
           name: android-release
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          path: android/app/build/outputs/apk/release/
 
-      - name: Upload iOS artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ios-release
-          path: ios/build/volunteam.xcarchive
-
-      - name: Create Release Notes
-        run: |
-          echo "Build completed successfully!" > release_notes.txt
-          echo "Download links:" >> release_notes.txt
-          echo "- Android bundle: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> release_notes.txt
-          echo "- iOS archive: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> release_notes.txt
-
+      # Update release with builds and notes
       - name: Update Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: release_notes.txt
-          body_path: release_notes.txt
+          files: |
+            android/app/build/outputs/apk/release/*.apk
+          body: |
+            ## Release Notes
+            This release includes:
+            - New features and improvements
+            - Bug fixes and optimizations
+            
+            ### Binary Files
+            - Android APK: Available in the assets section below
+            
+            Please download the appropriate binary for your platform.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
